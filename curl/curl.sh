@@ -56,16 +56,13 @@ function build_openssl() {
   fi
   
   cd openssl-${OPENSSL_VER}
-  # Configure for x86 minGW, shared (generates DLLs)
-  # -static-libgcc prevents the OpenSSL DLLs from requiring MinGW's libgcc_s_dw2-1.dll
   export LDFLAGS="-static-libgcc"
   ./Configure mingw shared --prefix=/opt/openssl-x86 --cross-compile-prefix=i686-w64-mingw32-
   make -j$(nproc)
-  make install_sw # install_sw skips building docs to save time
+  make install_sw 
   cd ..
 
-  # CRITICAL: Force GCC to dynamically link OpenSSL by removing the static archives (.a).
-  # Leaving only the import libraries (.dll.a) guarantees dynamically linked SSL.
+  # Force dynamic OpenSSL link by deleting the static files
   rm -f /opt/openssl-x86/lib/libcrypto.a /opt/openssl-x86/lib/libssl.a
 }
 
@@ -90,17 +87,17 @@ EOF
 
   arch="i686"
   
-  # Ensure standard libs link statically so curl doesn't require runtime GCC DLLs
   export LDFLAGS="-static-libgcc"
-  
-  # Remove Ubuntu's shared pthread library so it is forced to statically link winpthreads
   rm -f /usr/${arch}-w64-mingw32/lib/libwinpthread.dll.a || true
 
-  # Tell curl pkg-config where to find OpenSSL
   export PKG_CONFIG_PATH="/opt/openssl-x86/lib/pkgconfig"
   export CFLAGS="-I/opt/openssl-x86/include"
 
   make clean || true
+  
+  # Note: HTTP, HTTPS, FILE, IPFS, and IPNS are enabled implicitly.
+  # The "s" variants (FTPS, MQTTS, WSS, etc) are automatically supported 
+  # because OpenSSL is enabled.
   ./configure \
      --host ${arch}-w64-mingw32 \
      --disable-shared \
@@ -109,17 +106,19 @@ EOF
      --enable-unix-sockets \
      --with-openssl=/opt/openssl-x86 \
      --with-zlib \
-     --disable-ldap \
-     --disable-dict \
-     --disable-gopher \
-     --disable-imap \
-     --disable-smtp \
-     --disable-rtsp \
-     --disable-telnet \
-     --disable-tftp \
-     --disable-pop3 \
-     --disable-mqtt \
-     --disable-ftp \
+     --enable-dict \
+     --enable-ftp \
+     --enable-gopher \
+     --enable-imap \
+     --enable-pop3 \
+     --enable-rtsp \
+     --enable-smtp \
+     --enable-telnet \
+     --enable-tftp \
+     --enable-mqtt \
+     --enable-ldap \
+     --enable-ldaps \
+     --enable-websockets \
      --disable-smb \
      --without-libpsl
 
@@ -130,7 +129,6 @@ EOF
   cp -f src/curl.exe ../${CURL}
   ${arch}-w64-mingw32-strip -s ../${CURL}
   
-  # Bundle the OpenSSL DLLs alongside the curl executable artifact
   cp /opt/openssl-x86/bin/libcrypto-3.dll ../
   cp /opt/openssl-x86/bin/libssl-3.dll ../
 
@@ -140,13 +138,20 @@ EOF
 cat >> ../release.md<<EOF
 | ${CURL}          | ${arch} | openssl | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | ${SUM1} |
 | ${CURL}.nonstrip | ${arch} | openssl | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | ${SUM2} |
+
+## Protocols
+
+dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt mqtts pop3 pop3s rtsp smtp smtps telnet tftp ws wss
+
+## Features
+
+alt-svc AsynchDNS HSTS HTTPS-proxy IPv6 Kerberos Largefile NTLM SPNEGO SSL SSPI threadsafe UnixSockets
 EOF
 
   cd ..
 }
 
 ############################################################
-# Install GCC, MinGW-w64, and build tools
 apt-get update -y > /dev/null
 apt-get install -y curl wget bzip2 gnupg gpg-agent mingw-w64 make gcc perl pkg-config > /dev/null
  
