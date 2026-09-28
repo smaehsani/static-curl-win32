@@ -17,13 +17,13 @@ jobs:
         run: |
           chmod +x curl.sh
           sudo ./curl.sh
-
+          
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: curl-x86-openssl3
           path: |
-            curl_i686_openssl3.exe
-            libcrypto-3.dll
-            libssl-3.dll
-            release.md
+            curl/curl_i686_openssl3.exe
+            curl/libcrypto-3.dll
+            curl/libssl-3.dll
+            curl/release.md
