@@ -1,31 +1,29 @@
 name: Build x86 Curl with OpenSSL 3.x
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ test ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Run Build Script
         working-directory: ./curl
-        env:
-          OPENSSL_VERSION: "3.2.4"
         run: |
           chmod +x curl.sh
           sudo ./curl.sh
 
-      - name: Upload Binaries as Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: curl-windows-openssl3
+          name: curl-x86-openssl3
           path: |
-            curl/curl_*.exe
-            curl/curl_*.exe.nonstrip
-            curl/release.md
+            curl_i686_openssl3.exe
+            libcrypto-3.dll
+            libssl-3.dll
+            release.md
