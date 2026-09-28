@@ -19,8 +19,8 @@ jobs:
         run: |
           ./build.sh
           if [ -f "curl/mykey.asc" ] ; then
-            git config --global user.name  "LubinLew"
-            git config --global user.email "lgbxyz@gmail.com"
+            git config --global user.name  "smaehsani"
+            git config --global user.email "maehsani2012@gmail.com"
             git add version.txt
             VERSION=`cat version.txt`
             echo "VERSION=$VERSION" >> $GITHUB_ENV
